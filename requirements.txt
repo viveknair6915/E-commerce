@@ -1,0 +1,15 @@
+Django==4.2.10
+python-dotenv==1.0.0
+Pillow==11.0.0
+django-crispy-forms==2.1
+crispy-bootstrap5==2023.10
+stripe==7.6.0
+numpy==1.24.3
+pandas==1.5.3
+scikit-learn==1.2.2
+scipy==1.10.1
+cython==0.29.33
+pytest==7.4.0
+django-debug-toolbar==4.1.0
+pytest-django==4.5.2
+coverage==7.2.7

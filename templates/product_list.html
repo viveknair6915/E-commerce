@@ -1,0 +1,141 @@
+{% extends 'base.html' %}
+
+{% block title %}Our Products{% endblock %}
+
+{% block content %}
+<div class="row mb-4">
+    <div class="col-md-6">
+        <h1>Our Products</h1>
+    </div>
+    <div class="col-md-6 text-end">
+        <form class="d-flex" method="get" action="{% url 'product_list' %}">
+            <input class="form-control me-2" type="search" name="q" placeholder="Search products..." value="{{ query }}">
+            <button class="btn btn-outline-primary" type="submit">Search</button>
+        </form>
+    </div>
+</div>
+
+<div class="row">
+    <!-- Categories Sidebar -->
+    <div class="col-md-3">
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5>Categories</h5>
+            </div>
+            <ul class="list-group list-group-flush">
+                <li class="list-group-item {% if not category_slug %}
+                active{% endif %}">
+                    <a href="{% url 'product_list' %}" class="text-decoration-none {% if not category_slug %}
+                    text-white{% else %}text-dark{% endif %}">
+                        All Products
+                    </a>
+                </li>
+                {% for c in categories %}
+                <li class="list-group-item {% if category_slug == c.slug %}
+                active{% endif %}">
+                    <a href="{{ c.get_absolute_url }}" class="text-decoration-none {% if category_slug == c.slug %}
+                    text-white{% else %}text-dark{% endif %}">
+                        {{ c.name }}
+                    </a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+        
+        <div class="card">
+            <div class="card-header">
+                <h5>Filter by Price</h5>
+            </div>
+            <div class="card-body">
+                <form method="get" action="{% url 'product_list' %}">
+                    <div class="mb-3">
+                        <label for="min_price" class="form-label">Min Price</label>
+                        <input type="number" class="form-control" id="min_price" name="min_price" 
+                               value="{{ request.GET.min_price }}" min="0">
+                    </div>
+                    <div class="mb-3">
+                        <label for="max_price" class="form-label">Max Price</label>
+                        <input type="number" class="form-control" id="max_price" name="max_price" 
+                               value="{{ request.GET.max_price }}" min="0">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-100">Apply Filter</button>
+                    {% if request.GET.min_price or request.GET.max_price %}
+                    <a href="{% url 'product_list' %}" class="btn btn-outline-secondary w-100 mt-2">
+                        Clear Filters
+                    </a>
+                    {% endif %}
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Products Grid -->
+    <div class="col-md-9">
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for product in products %}
+            <div class="col">
+                <div class="card h-100">
+                    {% if product.image %}
+                    <img src="{{ product.image.url }}" class="card-img-top" alt="{{ product.name }}">
+                    {% endif %}
+                    <div class="card-body">
+                        <h5 class="card-title">{{ product.name }}</h5>
+                        <p class="card-text">${{ product.price }}</p>
+                        <p class="card-text text-muted small">{{ product.category.name }}</p>
+                        <a href="{{ product.get_absolute_url }}" class="btn btn-primary">View Details</a>
+                        <form action="{% url 'cart_add' product.id %}" method="post" class="d-inline">
+                            {% csrf_token %}
+                            <input type="hidden" name="quantity" value="1">
+                            <button type="submit" class="btn btn-success">Add to Cart</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            {% empty %}
+            <div class="col-12">
+                <div class="alert alert-info">No products found.</div>
+            </div>
+            {% endfor %}
+        </div>
+        
+        <!-- Pagination -->
+        {% if products.has_other_pages %}
+        <nav class="mt-4">
+            <ul class="pagination justify-content-center">
+                {% if products.has_previous %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.previous_page_number }}{% if query %}&q={{ query }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">Previous</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Previous</span>
+                </li>
+                {% endif %}
+                
+                {% for i in products.paginator.page_range %}
+                    {% if products.number == i %}
+                    <li class="page-item active">
+                        <span class="page-link">{{ i }}</span>
+                    </li>
+                    {% else %}
+                    <li class="page-item">
+                        <a class="page-link" href="?page={{ i }}{% if query %}&q={{ query }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">{{ i }}</a>
+                    </li>
+                    {% endif %}
+                {% endfor %}
+                
+                {% if products.has_next %}
+                <li class="page-item">
+                    <a class="page-link" href="?page={{ products.next_page_number }}{% if query %}&q={{ query }}{% endif %}{% if min_price %}&min_price={{ min_price }}{% endif %}{% if max_price %}&max_price={{ max_price }}{% endif %}">Next</a>
+                </li>
+                {% else %}
+                <li class="page-item disabled">
+                    <span class="page-link">Next</span>
+                </li>
+                {% endif %}
+            </ul>
+        </nav>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}

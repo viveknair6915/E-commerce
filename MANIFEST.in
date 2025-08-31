@@ -1,0 +1,9 @@
+include README.md
+include requirements.txt
+include .gitignore
+include .gitattributes
+recursive-include core/static *
+recursive-include core/templates *
+recursive-include media *
+recursive-include static *
+recursive-include templates *

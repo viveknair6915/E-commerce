@@ -1,0 +1,159 @@
+{% extends 'base.html' %}
+
+{% block title %}Recommended For You{% endblock %}
+
+{% block content %}
+<div class="container py-5">
+    <h2 class="mb-4">Recommended For You</h2>
+    
+    {% if not recommended %}
+        <div class="alert alert-info">
+            We don't have enough data to provide personalized recommendations yet. 
+            Please rate some products to help us understand your preferences.
+        </div>
+    {% else %}
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+            {% for rec in recommended %}
+                <div class="col">
+                    <div class="card h-100">
+                        <img 
+                            src="{{ rec.product.image.url }}" 
+                            class="card-img-top" 
+                            alt="{{ rec.product.name }}"
+                            style="height: 200px; object-fit: cover;"
+                        >
+                        <div class="card-body">
+                            <h5 class="card-title">{{ rec.product.name }}</h5>
+                            <p class="card-text text-muted">{{ rec.product.description|truncatewords:20 }}</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <h5 class="mb-0">${{ rec.product.price }}</h5>
+                                {% if rec.score > 0 %}
+                                    <span class="badge bg-primary">Match: {{ rec.score|floatformat:1 }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="card-footer bg-transparent">
+                            <div class="d-flex justify-content-between">
+                                <a href="{% url 'product_detail' rec.product.id %}" class="btn btn-sm btn-outline-primary">
+                                    View Details
+                                </a>
+                                <div class="rating" data-product-id="{{ rec.product.id }}">
+                                    <span class="text-muted me-2">Rate:</span>
+                                    {% for i in "12345" %}
+                                        <i 
+                                            class="far fa-star rating-star" 
+                                            data-rating="{{ i }}"
+                                            style="cursor: pointer;"
+                                        ></i>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    {% endif %}
+    
+    {% if not recommended or recommended|length < 6 %}
+        <div class="mt-5">
+            <h4 class="mb-3">Popular Products</h4>
+            <div class="row row-cols-1 row-cols-md-2 row-cols-lg-4 g-4">
+                {% for product in popular_products %}
+                    <div class="col">
+                        <div class="card h-100">
+                            <img 
+                                src="{{ product.image.url }}" 
+                                class="card-img-top" 
+                                alt="{{ product.name }}"
+                                style="height: 180px; object-fit: cover;"
+                            >
+                            <div class="card-body">
+                                <h5 class="card-title">{{ product.name }}</h5>
+                                <p class="card-text text-muted">{{ product.description|truncatewords:15 }}</p>
+                                <h5 class="mb-0">${{ product.price }}</h5>
+                            </div>
+                            <div class="card-footer bg-transparent">
+                                <a href="{% url 'product_detail' product.id %}" class="btn btn-sm btn-outline-primary">
+                                    View Details
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+</div>
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Handle star rating clicks
+    document.querySelectorAll('.rating-star').forEach(star => {
+        star.addEventListener('click', function() {
+            const rating = this.getAttribute('data-rating');
+            const productId = this.closest('.rating').getAttribute('data-product-id');
+            
+            // Send rating to server
+            fetch(`/rate/${productId}/`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/x-www-form-urlencoded',
+                    'X-CSRFTTOKEN': '{{ csrf_token }}'
+                },
+                body: `rating=${rating}`
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.status === 'success') {
+                    // Update star display
+                    const stars = this.parentElement.querySelectorAll('.rating-star');
+                    const ratingValue = parseInt(rating);
+                    
+                    stars.forEach((s, index) => {
+                        if (index < ratingValue) {
+                            s.classList.remove('far');
+                            s.classList.add('fas', 'text-warning');
+                        } else {
+                            s.classList.remove('fas', 'text-warning');
+                            s.classList.add('far');
+                        }
+                    });
+                    
+                    // Show success message
+                    const toast = new bootstrap.Toast(document.getElementById('toast'));
+                    document.getElementById('toast-message').textContent = 'Rating saved successfully';
+                    toast.show();
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+            });
+        });
+    });
+    
+    // Initialize star ratings for already rated products
+    document.querySelectorAll('.rating').forEach(ratingEl => {
+        const productId = ratingEl.getAttribute('data-product-id');
+        // Here you would typically fetch the user's rating for this product
+        // and update the stars accordingly
+    });
+});
+</script>
+
+<!-- Toast for messages -->
+<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+    <div id="toast" class="toast" role="alert" aria-live="assertive" aria-atomic="true">
+        <div class="toast-header">
+            <strong class="me-auto">Success</strong>
+            <button type="button" class="btn-close" data-bs-dismiss="toast" aria-label="Close"></button>
+        </div>
+        <div class="toast-body" id="toast-message">
+            Rating saved successfully
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% endblock %}
